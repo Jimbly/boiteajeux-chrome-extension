@@ -1,0 +1,70 @@
+(function () {
+  var was_my_turn = false;
+  function log(msg) {
+    console.log('Jimbly\'s Boiteajuex: ' + msg);
+  }
+  function get(url, cb) {
+    var req = new window.XMLHttpRequest();
+    req.onreadystatechange = function() {
+      if (req.readyState === 4) { // only if req is "loaded"
+        var err, response;
+        if (req.status === 200) {
+          response = req.responseText;
+        } else {
+          try {
+            response = req.responseText;
+          } catch (ignore) {
+          }
+          err = req.status + '\n' + req.statusText;
+        }
+        cb(err, response);
+      }
+    };
+    req.open('get', url, true);
+    req.send();
+  }
+  function isMyTurn(cb) {
+    if (was_my_turn) {
+      // Stop checking, we know it's our turn
+      return cb(true);
+    }
+    get('http://www.boiteajeux.net/index.php?p=encours', function (err, html) {
+      if (err) {
+        log('Error fetching game status', err);
+        return cb(false);
+      }
+      var m = html.match(/<span class="clInfo">([^<]+)<\/span>/);
+      var my_name = m && m[1];
+      m = html.match(new RegExp('<span style="font-weight:bold; color:\\w+; font-size:\\d+pt;">' + my_name + '<\\/span>'));
+      if (m) {
+        was_my_turn = true;
+        cb(true);
+      } else {
+        cb(false);
+      }
+    });
+  }
+  var bit = false;
+  function update() {
+    bit = !bit;
+    isMyTurn(function (my_turn) {
+      //log('my_turn=' + my_turn);
+      elem = document.querySelector('link[rel="shortcut icon"]');
+      if (elem) {
+        if (bit || !my_turn) {
+          elem.href = '/img/baj.ico';
+        } else {
+          // Swirly pattern
+          //var href = 'data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAD/hAAAAAD/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEREREREREREQAAAAAAAAABAREREREREQEBAAAAAAABAQEBEREREQEBAQEAAAABAQEBAQEREQEBAQEBAQABAQEBAQEBAQEBAQEBAQERAQEBAQEBAAABAQEBAQEREREBAQEBAAAAAAEBAQEREREREQEBAAAAAAAAAQERERERERERAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+          // Less obtrusive red dice
+          var href = 'data:image/x-icon;base64,AAABAAEAEBAAAAAAAABoBQAAFgAAACgAAAAQAAAAIAAAAAEACAAAAAAAAAEAAAAAAAAAAAAAAAEAAAAAAAA/P9wADg17AL+//wAMDOkAcnL2AJmZ5QANDZwAJibkABkZ3AD///8ATEzpAAAAoQAAALwAZWXtAAIAXQAZGeIAMjLLAFlZ3AAAAMIAZWXDADIyvACBgH8AwL+/AIyM4QAAANwAy8v/ADIytQAAALoATk1/ABsafwAAAMcAGRntAAAA1AAODXYApaX/AAAAqwBlZdwAAgBuAIyM5gAAAOEADQ2lAAAAnQBlZc4AJibtABkZ5QAAALEAJibEAAAA7gAAAIgAsrL/AA4NbgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACQkJCQkJFTIcFgkJCQkJCQkJCQkVDgsIGwYcFgkJCQkJCRUOCzAwCBAQGwYcFgkJFg4kMDAwMAgQMRsbGwYcCRUNFzAwMDAIGxsbGxAAIQkVDCMLEzAwCBsbEAAAMSUJFQwpKiYLMAgQAAAxJyAlCRUMKSkpGhkIADEbGyAbJQkVDCkpKRQuKywnGxsQECUJFQwpKS0PHx8eLCwSEDElCRUMLQ8fGBgfGxsSLCweJQkVHx8YGBgHBBEbGxsvLCEJFgEDGBgYIgIFChsbEigcCQkJFQEDGAcAACcSKBwWCQkJCQkJFQEDHxIoHBYJCQkJCQkJCQkJFR0cFgkJCQkJCQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+          elem.href = href;
+        }
+        setTimeout(update, my_turn ? 1000 : 15000);
+      } else {
+        log('Found no favicon element');
+      }
+    });
+  }
+  setTimeout(update, 1000);
+})();
